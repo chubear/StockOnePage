@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StockOnePage — 個股資料一頁式查詢</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1e293b',
+            surface: '#0f172a',
+            card: '#1e293b',
+            accent: '#3b82f6',
+            up: '#ef4444',
+            down: '#22c55e',
+            muted: '#94a3b8',
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lightweight-charts@4/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-surface text-slate-100 min-h-screen">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 bg-surface/95 backdrop-blur border-b border-slate-700/50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
+      <h1 class="text-xl font-bold text-accent shrink-0">StockOnePage</h1>
+      <div class="flex items-center gap-2 flex-1 max-w-md">
+        <input
+          id="ticker-input"
+          type="text"
+          placeholder="輸入股票代號，例如 2330"
+          class="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent placeholder-slate-500"
+        >
+        <button
+          id="search-btn"
+          class="bg-accent hover:bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors shrink-0"
+        >查詢</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- 初始提示 -->
+    <div id="welcome-msg" class="text-center py-20 text-slate-500">
+      <p class="text-lg">輸入股票代號開始查詢</p>
+    </div>
+
+    <!-- 資料區塊容器（預設隱藏） -->
+    <div id="data-container" class="hidden space-y-6">
+
+      <!-- 公司概要 -->
+      <section id="section-profile" class="bg-card rounded-xl p-5 border border-slate-700/50">
+        <div id="profile-content" class="section-loading">
+          <div class="skeleton h-6 w-48 mb-3"></div>
+          <div class="skeleton h-4 w-96"></div>
+        </div>
+      </section>
+
+      <!-- K 線圖 -->
+      <section id="section-kline" class="bg-card rounded-xl p-5 border border-slate-700/50">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">K 線圖</h2>
+          <div id="kline-range-btns" class="flex gap-1">
+            <button data-range="3M" class="range-btn">3M</button>
+            <button data-range="6M" class="range-btn">6M</button>
+            <button data-range="1Y" class="range-btn">1Y</button>
+            <button data-range="3Y" class="range-btn">3Y</button>
+            <button data-range="5Y" class="range-btn range-btn-active">5Y</button>
+          </div>
+        </div>
+        <div id="kline-chart" class="w-full" style="height: 420px;">
+          <div class="section-loading h-full flex items-center justify-center">
+            <div class="skeleton h-full w-full rounded-lg"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 基本面：月營收 + 季度損益 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 月營收 -->
+        <section id="section-revenue" class="bg-card rounded-xl p-5 border border-slate-700/50">
+          <h2 class="text-lg font-semibold mb-4">月營收（近 12 個月）</h2>
+          <div id="revenue-chart-container" style="height: 250px;" class="mb-4">
+            <div class="section-loading h-full"><div class="skeleton h-full w-full rounded-lg"></div></div>
+          </div>
+          <div id="revenue-table-container" class="overflow-x-auto">
+            <div class="section-loading"><div class="skeleton h-40 w-full rounded-lg"></div></div>
+          </div>
+        </section>
+
+        <!-- 季度損益 -->
+        <section id="section-income" class="bg-card rounded-xl p-5 border border-slate-700/50">
+          <h2 class="text-lg font-semibold mb-4">季度損益（近 8 季）</h2>
+          <div id="income-table-container" class="overflow-x-auto">
+            <div class="section-loading"><div class="skeleton h-64 w-full rounded-lg"></div></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 籌碼面：三大法人 -->
+      <section id="section-institutional" class="bg-card rounded-xl p-5 border border-slate-700/50">
+        <h2 class="text-lg font-semibold mb-4">三大法人買賣超（近 30 日）</h2>
+        <div id="institutional-chart-container" style="height: 300px;" class="mb-4">
+          <div class="section-loading h-full"><div class="skeleton h-full w-full rounded-lg"></div></div>
+        </div>
+        <div id="institutional-cards" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="section-loading"><div class="skeleton h-28 w-full rounded-lg"></div></div>
+          <div class="section-loading"><div class="skeleton h-28 w-full rounded-lg"></div></div>
+          <div class="section-loading"><div class="skeleton h-28 w-full rounded-lg"></div></div>
+        </div>
+      </section>
+
+      <!-- 籌碼面：股權分散 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section id="section-shareholders" class="bg-card rounded-xl p-5 border border-slate-700/50">
+          <h2 class="text-lg font-semibold mb-4">股權分散表</h2>
+          <div id="shareholders-chart-container" style="height: 280px;">
+            <div class="section-loading h-full"><div class="skeleton h-full w-full rounded-lg"></div></div>
+          </div>
+        </section>
+
+        <section id="section-shareholders-trend" class="bg-card rounded-xl p-5 border border-slate-700/50">
+          <h2 class="text-lg font-semibold mb-4">大戶持股趨勢（近 12 週）</h2>
+          <div id="shareholders-trend-container" style="height: 280px;">
+            <div class="section-loading h-full"><div class="skeleton h-full w-full rounded-lg"></div></div>
+          </div>
+        </section>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center text-slate-600 text-xs py-6 border-t border-slate-800">
+    StockOnePage &mdash; 資料來源：CMWebAPI
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
