@@ -82,7 +82,7 @@ async function search(ticker) {
   try {
     if (data.quotes) renderKline(data.quotes.data);
     else showError(document.getElementById('kline-chart'), 'K 線資料載入失敗');
-  } catch { showError(document.getElementById('kline-chart'), 'K 線渲染錯誤'); }
+  } catch (e) { console.error('K線渲染錯誤:', e); showError(document.getElementById('kline-chart'), 'K 線渲染錯誤: ' + e.message); }
 
   try {
     if (data.sales) renderRevenue(data.sales.data);

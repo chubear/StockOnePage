@@ -30,21 +30,31 @@ export function renderKline(data) {
     height: 420,
   });
 
-  // Candlestick series
-  candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+  // Candlestick series (v4 compatible: try new API first, fallback to legacy)
+  const candleOpts = {
     upColor: '#ef4444',
     downColor: '#22c55e',
     borderUpColor: '#ef4444',
     borderDownColor: '#22c55e',
     wickUpColor: '#ef4444',
     wickDownColor: '#22c55e',
-  });
+  };
+  if (LightweightCharts.CandlestickSeries) {
+    candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, candleOpts);
+  } else {
+    candleSeries = chart.addCandlestickSeries(candleOpts);
+  }
 
   // Volume series
-  volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+  const histOpts = {
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
-  });
+  };
+  if (LightweightCharts.HistogramSeries) {
+    volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, histOpts);
+  } else {
+    volumeSeries = chart.addHistogramSeries(histOpts);
+  }
   chart.priceScale('volume').applyOptions({
     scaleMargins: { top: 0.8, bottom: 0 },
   });
